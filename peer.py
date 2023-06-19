@@ -2,9 +2,8 @@ import socket
 import threading
 import Pyro4
 import os
-import re
 
-from utils import input_ip, input_port
+from utils import get_ip, get_port, interactive_menu
 
 # Método para obter nomes dos arquivos em uma pasta
 def get_file_names(folder):
@@ -28,10 +27,10 @@ def start_peer():
     print("Inicializando peer.")
 
     # Armazena endereço de IP do peer
-    peer_ip = input_ip()
+    peer_ip = get_ip('peer')
 
     # Armazena endereço de porta do peer
-    peer_port = input_port()
+    peer_port = get_port('peer')
 
     # Armazena server_uri
     server_uri = input(f"Digite a uri do peer: (default: PYRO:server@127.0.0.1:1099): ")
@@ -63,7 +62,7 @@ class Peer:
 
     # Método para enviar requisição de JOIN ao servidor
     def join(self, folder):
-        # Armazena nomes dos arquivos
+        # Verifica se o caminho existe e armazena os arquivos encontrado nele
         files = get_file_names(folder)
 
         # Lógica para conectar peer ao servidor
@@ -90,8 +89,7 @@ class Peer:
             # Lógica
             if response == "UPDATE_OK":
                 # Exibe mensagem no console do cliente (peer)
-                # print(f"Sou peer {self.ip}:{self.port} realizou o download do arquivo {filename}.")
-                pass
+                print(f"Sou peer {self.ip}:{self.port} realizou o download do arquivo {filename}.")
             else:
                 # Exibe mensagem no console do cliente (peer)
                 print(f"Resposta inesperada (update_server): {response}.")
@@ -111,63 +109,113 @@ class Peer:
             # Exibe mensagem no console do cliente (peer)
             print(f"Ocorreu uma exceção (search_server): {e}.")
     
-    # Método para enviar requisição de DOWNLOAD por TCP a outro peer
+    # Método para enviar arquivo da requisição de DOWNLOAD por TCP por outro peer
     def download(self, peer_ip, peer_port, filename):
+
         # Conecta-se ao peer utilizando sockets TCP
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
         sock.connect((peer_ip, peer_port))
 
+        # TODO Envia a requisição de DOWNLOAD ao peer? 
+        # TODO isso devolve uma resposta?
+        # ou seja, é aqui que eu recebo a resposta se a conexão foi aceita ou rejeitada
+        
         # Envia a requisição de DOWNLOAD ao peer
         sock.send(f"{filename}".encode("utf-8"))
 
-        # Recebe o arquivo do peer
-        with open(os.path.join(self.folder, filename), "wb") as file:
-            while True:
-                data = sock.recv(1024)
-                if not data:
-                    break
-                file.write(data)
+        # Armazena caminho do arquivo
+        file_path = os.path.join(self.folder, filename)
+
+        # Recebe a resposta do peer
+        response = sock.recv(1024).decode("utf-8")
+        response = response.lower()
+
+        if response == "accept":
+            # Tamanho do arquivo recebido do peer
+            file_size = int(sock.recv(1024).decode("utf-8"))
+
+            # Envia a resposta de aceitação para o peer
+            sock.send("ACCEPT".encode("utf-8"))
+
+            # Recebe o arquivo do peer
+            with open(file_path, "wb") as file:
+                bytes_received = 0
+                while bytes_received < file_size:
+                    data = sock.recv(4096)
+                    file.write(data)
+                    bytes_received += len(data)
+
+            # Exibe mensagem no console do cliente (peer)
+            print(f"Arquivo {filename} baixado com sucesso na pasta {self.folder}.")
+            self.update(filename)
+        else:
+            # Exibe mensagem no console do cliente (peer)
+            print(f"O peer {peer_ip}:{peer_port} rejeitou a transferência do arquivo {filename}.")
+
         sock.close()
-        # Exibe mensagem no console do cliente (peer)
-        print(f"Arquivo {filename} baixado com sucesso na pasta {self.folder}.")
-        self.update(filename)
     
+    # Método de conexão para peer receber requisição de download
     def listen_for_download_requests(self):
         self.server_socket.listen()
         while True:
             conn, addr = self.server_socket.accept()
             threading.Thread(target=self.handle_download_request, args=[conn], daemon=True).start()
             
+    # Método de conexão para peer enviar dados de arquivo requisitado
     def handle_download_request(self, conn):
+        # Tamanho do pacote em bytes
+        CHUNK_SIZE = 4096  
+
+        # Armazenar conexão entre peers?
         filename = conn.recv(1024).decode("utf-8")
-        with open(os.path.join(self.folder, filename), 'r') as file:
+
+        # Armazenar caminho do arquivo
+        file_path = os.path.join(self.folder, filename)
+
+        # TODO Verifica se existe o arquivo no caminho - eu recebo essa resposta no método acima?
+        if os.path.exists(file_path):
+            # Enviar resposta de aceitação para o cliente
+            conn.send("ACCEPT".encode("utf-8"))
+        else:
+            # File not found, send error message to the client
+            conn.send("REJECT".encode("utf-8"))
+            conn.close()
+            return
+
+        # Armazenar tamanho do arquivo
+        file_size = os.path.getsize(file_path)
+
+        # TODO Enviar o tamanho do arquivo para o cliente?
+        conn.send(str(file_size).encode("utf-8"))
+
+        # TODO Receber resposta do cliente (accept/reject)?
+        response = conn.recv(1024).decode("utf-8")
+        response = response.lower()
+
+        # Verifica se cliente rejeitou enviar o arquivo
+        if response != "accept":
+            print("Peer rejeitou a transferência do arquivo, fechar a conexão.")
+            conn.close()
+            return
+
+        # Abre o arquivo em modo binário para a leitura
+        with open(file_path, 'rb') as file:
+            # Envia o arquivo em pacotes
             while True:
-                data = file.read(1024)
+                data = file.read(CHUNK_SIZE)
                 if not data:
                     break
-                conn.write(data)
+                #conn.write(data)
+                conn.sendall(data)
+
+        # Fecha a conezão depois que o arquivo é enviado
         conn.close()
 
 # Função principal do cliente (peer)
 def main():
-   
-    # Criação do objeto Peer
-    peer = start_peer()
 
-    while True:
-        command = input("Digite seu comando (JOIN <pasta>, SEARCH <arquivo>, DOWNLOAD <ip>:<porta> <arquivo>): ")
-        
-        join_match = re.match(r"JOIN (.+)", command)
-        if join_match:
-            peer.join(join_match.group(1))
-
-        search_match = re.match(r"SEARCH (.+)", command)
-        if search_match:
-            peer.search(search_match.group(1))
-
-        download_match = re.match(r"DOWNLOAD (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+) (.+)", command)
-        if download_match:
-            peer.download(download_match.group(1), int(download_match.group(2)), download_match.group(3))
+    # Menu iterativo do lado do cliente (peer)
+    interactive_menu()
 
 if __name__ == "__main__":
     main()

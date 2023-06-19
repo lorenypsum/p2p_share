@@ -1,6 +1,6 @@
 import Pyro4
-from utils import extract_ip, extract_port, input_ip, input_port
 
+from utils import get_ip, get_port
 
 # Classe do servidor
 @Pyro4.expose
@@ -53,8 +53,6 @@ class Server:
         # Retorna a lista de peers para o peer que fez a requisição
         return peers_with_file  
         
-       
-
 # Método para inicializar o servidor
 def start_server():
 
@@ -62,10 +60,10 @@ def start_server():
     print("Inicializando peer.")
     
     # Armazena endereço de IP do servidor
-    ip = input_ip()
+    ip = get_ip('servidor')
 
     # Armazena endereço de porta do servidor
-    port = input_port()
+    port = get_port('servidor')
 
     # Inicialização do servidor Pyro4
     daemon = Pyro4.Daemon(host=ip, port=port)
