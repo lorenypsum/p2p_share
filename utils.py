@@ -80,12 +80,12 @@ def get_port(class_type):
         print(f"Class type: {class_type} não foi identificado.")
 
 # Método para capturar caminho de arquivo válido
-def get_filepath():   
+def get_filepath(file_path):   
     while True:
         print("Digite o caminho do arquivo, ou 0 para sair.")
-        path = input("Caminho do arquivo (default: '.'): ")
+        path = input("Caminho do arquivo (default: peer folder): ")
         if not path:
-            path = "."
+            path = file_path
         if os.path.exists(path):
             print(f"O caminho '{path}' existe.")
             return path
@@ -98,7 +98,7 @@ def get_filepath():
 def get_filename(file_path):
     while True:   
         print("Digite o nome do arquivo, ou 0 para sair.")
-        filename = input("Nome do arquivo: ")
+        filename = input("Nome do arquivo (default: 'README.md'): ")
         if not filename:
             filename = "README.md"
         if os.path.isfile(file_path):
@@ -141,7 +141,7 @@ def interactive_menu(peer):
         folder = '.'
         # JOIN
         if option == "1":
-            folder = get_filepath()
+            folder = get_filepath(folder)
             peer.join(folder)
         # SEARCH
         elif option == "2":
@@ -151,7 +151,7 @@ def interactive_menu(peer):
         elif option == "3":
             ip = get_ip('peer')
             port = get_port('peer')
-            filename = get_filename()
+            filename = get_filename(folder)
             peer.download(ip, port, filename)
         # SAIR
         elif option == "0":
