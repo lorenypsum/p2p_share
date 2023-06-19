@@ -33,9 +33,9 @@ def start_peer():
     peer_port = get_port('peer')
 
     # Armazena server_uri
-    server_uri = input(f"Digite a uri do peer: (default: PYRO:server@{peer_ip}:{peer_port}): ")
+    server_uri = input(f"Digite a uri do servidor: (default: PYRO:server@127.0.0.1:1099): ")
     if not server_uri:
-        server_uri = f"PYRO:server@{peer_ip}:{peer_port}"
+        server_uri = f"PYRO:server@127.0.0.1:1099"
 
     # Captura as informações de pasta do peer
     peer_folder = input("Digite a pasta do peer: (default: . )")
