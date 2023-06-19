@@ -100,7 +100,7 @@ def get_filename(file_path):
         print("Digite o nome do arquivo, ou 0 para sair.")
         filename = input("Nome do arquivo (default: 'README.md'): ")
         if not filename:
-            filename = "README.md"
+            filename = 'README.md'
         if os.path.isfile(file_path):
             return filename
         elif filename == "0":
@@ -111,14 +111,14 @@ def get_filename(file_path):
 # Método para capturar entradas do peer
 def interactive_menu(peer):
     # Peer Info
-    peer_ip = peer.ip
-    peer_port = peer.port
-    peer_server_uri = peer.server_uri
-    peer_folder = peer.folder
+    my_ip = peer.ip
+    my_port = peer.port
+    my_server_uri = peer.server_uri
+    my_folder = peer.folder
 
     # Peer Info
-    print( f'INFO PEER ATUAL: ')
-    print(f"IP: {peer_ip}, PORT: {peer_port}, SERVER_URI: {peer_server_uri},  FOLDER: {peer_folder}")
+    print( f'INFO ABOUT ME: ')
+    print(f"IP: {my_ip}, PORT: {my_port}, SERVER_URI: {my_server_uri},  FOLDER: {my_folder}")
     print("")
 
     # Menu
@@ -138,20 +138,20 @@ def interactive_menu(peer):
 
         option = input("Opção: ")
 
-        folder = '.'
+        peer_folder = '.'
         # JOIN
         if option == "1":
-            folder = get_filepath(folder)
-            peer.join(folder)
+            peer_folder = get_filepath(my_folder)
+            peer.join(my_folder)
         # SEARCH
         elif option == "2":
-            filename = get_filename(folder)
-            peer.join(filename)
+            filename = get_filename(peer_folder)
+            peer.search(filename)
         # DOWNLOAD
         elif option == "3":
             ip = get_ip('peer')
             port = get_port('peer')
-            filename = get_filename(folder)
+            filename = get_filename(peer_folder)
             peer.download(ip, port, filename)
         # SAIR
         elif option == "0":

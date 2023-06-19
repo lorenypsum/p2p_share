@@ -35,12 +35,12 @@ def start_peer():
     # Armazena server_uri
     server_uri = input(f"Digite a uri do peer: (default: PYRO:server@127.0.0.1:1099): ")
     if not server_uri:
-        server_uri = "PYRO:server@127.0.0.1:1099"
+        server_uri = f"PYRO:server@{peer_ip}:{peer_port}"
 
     # Captura as informações de pasta do peer
-    peer_folder = input("Digite a pasta do peer: (default: .)")
+    peer_folder = input("Digite a pasta do peer: (default: . )")
     if not peer_folder:
-        peer_folder = "."
+        peer_folder = '.'
     
     # Inicializa peer
     peer = Peer(ip = peer_ip, server_uri = server_uri, port = peer_port, folder = peer_folder)  
