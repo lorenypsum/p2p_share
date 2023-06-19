@@ -1,0 +1,363 @@
+############################################################################################################################
+# Class Server
+import Pyro4
+
+class Server:
+    def __init__(self):
+        # Inicialize as estruturas de dados do servidor
+        self.peers = {}
+
+    def join(self, peer_info):
+        # Lógica para adicionar um peer ao servidor
+        pass
+
+    def search(self, filename):
+        # Lógica para procurar um arquivo no servidor
+        pass
+
+    def update(self, peer_info, filename):
+        # Lógica para atualizar as informações de um peer após o download
+        pass
+
+    def start(self):
+        # Inicialização do servidor
+        pass
+
+# Inicialização do servidor Pyro4
+daemon = Pyro4.Daemon()
+ns = Pyro4.locateNS()
+
+# Registro da classe Server no servidor Pyro4
+server = Server()
+uri = daemon.register(server)
+ns.register("server", uri)
+
+print("Servidor iniciado.")
+daemon.requestLoop()
+############################################################################################################################
+
+
+############################################################################################################################
+# Class Peer
+
+import Pyro4
+import socket
+
+class Peer:
+    def __init__(self, server_uri, ip, port, folder):
+        self.server_uri = server_uri
+        self.ip = ip
+        self.port = port
+        self.folder = folder
+
+    def join(self):
+        # Lógica para enviar requisição de JOIN ao servidor
+        pass
+
+    def search(self, filename):
+        # Lógica para enviar requisição de SEARCH ao servidor
+        pass
+
+    def download(self, peer_ip, peer_port, filename):
+        # Lógica para enviar requisição de DOWNLOAD a outro peer
+        pass
+
+    def start(self):
+        # Inicialização do peer
+        pass
+
+# Captura de informações do peer
+ip = socket.gethostbyname(socket.gethostname())
+port = int(input("Informe a porta do peer: "))
+folder = input("Informe a pasta onde estão armazenados os arquivos do peer: ")
+
+# Criação do objeto Peer
+peer = Peer(server_uri="PYRO:server@localhost:9090", ip=ip, port=port, folder=folder)
+peer.start()
+############################################################################################################################
+
+
+############################################################################################################################
+# Class main
+from server import Server
+from peer import Peer
+
+# Inicialização do servidor Pyro4
+daemon = Pyro4.Daemon()
+ns = Pyro4.locateNS()
+
+# Registro da classe Server no servidor Pyro4
+server = Server()
+uri = daemon.register(server)
+ns.register("server", uri)
+
+print("Servidor iniciado.")
+daemon.requestLoop()
+
+# Captura de informações do peer
+ip = socket.gethostbyname(socket.gethostname())
+port = int(input("Informe a porta do peer: "))
+folder = input("Informe a pasta onde estão armazenados os arquivos do peer: ")
+
+# Criação do objeto Peer
+peer = Peer(server_uri="PYRO:server@localhost:9090", ip=ip, port=port, folder=folder)
+peer.start()
+############################################################################################################################
+
+
+############################################################################################################################
+# Bloco inteiro de código
+import Pyro4
+import socket
+import threading
+
+
+#----------------------------------------------------------------------------------------------------------------------------# 
+# Classe para representar o servidor
+class Server(object):
+    def __init__(self):
+        self.peers = {}  # Dicionário para armazenar informações dos peers
+
+    # Método para lidar com a requisição de JOIN
+    def handle_join_request(self, peer_info):
+        # Armazena as informações do peer no dicionário
+        peer_address = peer_info["ip"] + ":" + str(peer_info["port"])
+        self.peers[peer_address] = peer_info["files"]
+
+        # Exibe a mensagem de confirmação no console do servidor
+        print(f"Peer {peer_address} adicionado com arquivos {', '.join(peer_info['files'])}")
+
+        return "JOIN_OK"  # Retorna a resposta para o peer
+
+    # Método para lidar com a requisição de SEARCH
+    def handle_search_request(self, filename):
+        # Procura pelos peers que possuem o arquivo solicitado
+        peers_with_file = [peer for peer, files in self.peers.items() if filename in files]
+
+        # Exibe a lista de peers com o arquivo solicitado no console do servidor
+        print(f"Peers com arquivo solicitado ({filename}): {', '.join(peers_with_file)}")
+
+        return peers_with_file  # Retorna a lista de peers para o peer que fez a requisição
+
+    # Método para lidar com a requisição de UPDATE
+    def handle_update_request(self, peer_address, filename):
+        # Atualiza as informações do peer com o novo arquivo
+        self.peers[peer_address].append(filename)
+
+        # Exibe a mensagem de confirmação no console do servidor
+        print(f"Peer {peer_address} baixou o arquivo {filename}")
+
+        return "UPDATE_OK"  # Retorna a resposta para o peer
+
+    # Método para inicializar o servidor
+    def start_server(self, ip, port):
+        # Registra o objeto do servidor com Pyro4
+        daemon = Pyro4.Daemon(host=ip, port=port)
+        uri = daemon.register(self)
+
+        print(f"Servidor iniciado em {ip}:{port}")
+
+        # Aguarda as requisições dos peers
+        daemon.requestLoop()
+
+
+#----------------------------------------------------------------------------------------------------------------------------# 
+# Classe para representar o peer
+class Peer(object):
+    def __init__(self):
+        self.server = None
+
+    # Método para lidar com as requisições do servidor em uma nova thread
+    def handle_server_requests(self):
+        with Pyro4.locateNS() as ns:
+            # Obtém o URI do servidor registrado no Name Server
+            server_uri = ns.lookup("sistema.servidor")
+
+            # Conecta-se ao servidor
+            self.server = Pyro4.Proxy(server_uri)
+
+            # Mantém o peer ativo para receber requisições do servidor
+            threading.Thread(target=self.server.handle_peer_requests, daemon=True).start()
+
+    # Método para lidar com a requisição de JOIN
+    def join_request(self, server_uri, peer_info):
+        # Envia a requisição de JOIN ao servidor
+        response = self.server.handle_join_request(peer_info)
+
+        # Exibe a mensagem de confirmação no console do peer
+        peer_address = peer_info["ip"] + ":" + str(peer_info["port"])
+        print(f"Sou peer {peer_address} com arquivos {', '.join(peer_info['files'])}")
+
+        return response
+
+    # Método para lidar com a requisição de SEARCH
+    def search_request(self, server_uri, filename):
+        # Envia a requisição de SEARCH ao servidor
+        response = self.server.handle_search_request(filename)
+
+        # Exibe a lista de peers com o arquivo solicitado no console do peer
+        print(f"Peers com arquivo solicitado: {', '.join(response)}")
+
+        return response
+
+    # Método para lidar com a requisição de DOWNLOAD
+    def download_request(self, peer_address, filename):
+        # Conecta-se ao peer utilizando sockets TCP
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((peer_address, 12345))  # Supondo que o peer está ouvindo na porta 12345
+
+        # Envia a requisição de DOWNLOAD ao peer
+        request = f"DOWNLOAD {filename}"
+        sock.send(request.encode())
+
+        # Aguarda a resposta do peer
+        response = sock.recv(1024).decode()
+
+        if response == "FILE_FOUND":
+            # Recebe o arquivo do peer
+            with open(filename, "wb") as file:
+                while True:
+                    data = sock.recv(1024)
+                    if not data:
+                        break
+                    file.write(data)
+
+            # Exibe a mensagem de confirmação no console do peer
+            print(f"Arquivo {filename} baixado com sucesso na pasta {peer_folder}")
+        else:
+            # Exibe a mensagem de arquivo não encontrado no console do peer
+            print(f"Arquivo {filename} não encontrado no peer {peer_address}")
+
+        sock.close()
+
+    # Método para inicializar o peer
+    def start_peer(self):
+        # Captura as informações do peer (IP, porta e pasta)
+        ip = input("Digite o IP do peer: ")
+        port = int(input("Digite a porta do peer: "))
+        peer_folder = input("Digite a pasta do peer: ")
+
+        # Configura o servidor Pyro4
+        daemon = Pyro4.Daemon(host=ip)
+        ns = Pyro4.locateNS()
+        uri = daemon.register(self)
+        ns.register("sistema.servidor", uri)
+
+        print(f"Peer iniciado em {ip}:{port}")
+
+        # Inicia a thread para lidar com as requisições do servidor
+        threading.Thread(target=self.handle_server_requests, daemon=True).start()
+
+        # Menu interativo
+        while True:
+            print("Escolha uma opção:")
+            print("1. JOIN")
+            print("2. SEARCH")
+            print("3. DOWNLOAD")
+            print("0. Sair")
+
+            option = input("Opção: ")
+            if option == "1":
+                # Requisição de JOIN
+                files = input("Digite o nome dos arquivos separados por vírgula: ").split(",")
+                peer_info = {"ip": ip, "port": port, "files": files}
+                response = self.join_request("sistema.servidor", peer_info)
+                print(f"Resposta do servidor: {response}")
+            elif option == "2":
+                # Requisição de SEARCH
+                filename = input("Digite o nome do arquivo: ")
+                response = self.search_request("sistema.servidor", filename)
+                print(f"Resposta do servidor: {response}")
+            elif option == "3":
+                # Requisição de DOWNLOAD
+                peer_address = input("Digite o IP:porta do peer: ")
+                filename = input("Digite o nome do arquivo: ")
+                self.download_request(peer_address, filename)
+            elif option == "0":
+                break
+            else:
+                print("Opção inválida")
+
+        # Remove o registro do servidor no Name Server
+        ns.remove("sistema.servidor")
+        daemon.shutdown()
+
+# Inicializa o servidor em uma nova thread
+def start_server():
+    server = Server()
+    server.start_server("127.0.0.1", 1099)
+
+# Inicializa o peer
+def start_peer():
+    peer = Peer()
+    peer.start_peer()
+
+
+#----------------------------------------------------------------------------------------------------------------------------#    
+# Função principal
+def main():
+    # Inicia o servidor em uma nova thread
+    threading.Thread(target=start_server, daemon=True).start()
+
+    # Aguarda um pequeno intervalo para o servidor iniciar
+    time.sleep(1)
+
+    # Inicializa o peer
+    start_peer()
+
+if __name__ == "__main__":
+    main()
+
+############################################################################################################################
+
+def handle_download_request(self, conn):
+    # Receive the filename from the client
+    filename = conn.recv(1024).decode("utf-8")
+
+    file_path = os.path.join(self.folder, filename)
+
+    if not os.path.isfile(file_path):
+        conn.send(b"File not found")
+        conn.close()
+        return
+
+    file_size = os.path.getsize(file_path)
+
+    # Check if the file size exceeds the limit (1 GB)
+    if file_size > 1 * 1024 * 1024 * 1024:
+        conn.send(b"File size exceeds the limit")
+        conn.close()
+        return
+
+    # Send a confirmation message to the client
+    conn.send(b"Ready to receive file")
+
+    # Open the file in binary mode for reading
+    with open(file_path, "rb") as file:
+        # Send the file in chunks
+        while True:
+            chunk = file.read(4096)  # Read 4KB chunks
+
+            # If the chunk is empty, we have reached the end of the file
+            if not chunk:
+                break
+
+            # Send the chunk to the client
+            conn.sendall(chunk)
+
+    # Close the connection after sending the file
+    conn.close()
+
+
+# Recebe o arquivo do peer
+with open(file_path, "wb") as file:
+    while True:
+        data = sock.recv(1024)
+        if not data:
+            break
+        file.write(data)
+sock.close()
+
+# Exibe mensagem no console do cliente (peer)
+print(f"Arquivo {filename} baixado com sucesso na pasta {self.folder}.")
+self.update(filename)
