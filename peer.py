@@ -213,9 +213,10 @@ class Peer:
 
 # Função principal do cliente (peer)
 def main():
-
+    # Criação do objeto Peer
+    peer = start_peer()
     # Menu iterativo do lado do cliente (peer)
-    interactive_menu()
+    interactive_menu(peer)
 
 if __name__ == "__main__":
     main()

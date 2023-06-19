@@ -1,6 +1,5 @@
 import os
 import re
-from peer import start_peer
 
 # Método para extrair endereço IP válido
 def extract_ip(string):
@@ -99,10 +98,7 @@ def get_filename():
         return filename
 
 # Método para capturar entradas do peer
-def interactive_menu():
-    # Criação do objeto Peer
-    peer = start_peer()
-
+def interactive_menu(peer):
     # Peer Info
     peer_ip = peer.ip
     peer_port = peer.port
