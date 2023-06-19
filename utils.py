@@ -93,9 +93,16 @@ def get_filepath():
             print("Caminho inválido. Por favor, tente novamente.")
 
 # Método para capturar nome de arquivo
-def get_filename():   
-        filename = input("Digite o nome do arquivo: ")
-        return filename
+def get_filename(file_path):
+    while True:   
+        print("Digite o nome do arquivo, ou 0 para sair.")
+        filename = input("Nome do arquivo: ")
+        if os.path.isfile(file_path):
+            return filename
+        elif filename == "0":
+            break
+        else:
+            print("Arquivo não encontrado. Por favor, tente novamente.")
 
 # Método para capturar entradas do peer
 def interactive_menu(peer):
@@ -105,12 +112,15 @@ def interactive_menu(peer):
     peer_server_uri = peer.server_uri
     peer_folder = peer.folder
 
+    # Peer Info
+    print( f'INFO PEER ATUAL: ')
+    print(f"IP: {peer_ip}, PORT: {peer_port}, SERVER_URI: {peer_server_uri},  FOLDER: {peer_folder}")
+    print("")
+
     # Menu
-    while True:
-        # Peer Info
-        print( f'INFO PEER ATUAL: ')
-        print(f"IP: {peer_ip}, PORT: {peer_port}, SERVER_URI: {peer_server_uri},  FOLDER: {peer_folder}")
+    while True:    
         # Opções
+        print("")
         print("############################")
         print("")
         print("Selecione uma opção:")
@@ -120,16 +130,18 @@ def interactive_menu(peer):
         print("0. Sair")
         print("")
         print("############################")
+        print("")
 
         option = input("Opção: ")
 
+        folder = '.'
         # JOIN
         if option == "1":
             folder = get_filepath()
             peer.join(folder)
         # SEARCH
         elif option == "2":
-            filename = get_filename()
+            filename = get_filename(folder)
             peer.join(filename)
         # DOWNLOAD
         elif option == "3":
