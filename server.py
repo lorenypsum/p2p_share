@@ -57,7 +57,7 @@ class Server:
 def start_server():
 
     # Exibe a mensagem
-    print("Inicializando peer.")
+    print("Inicializando Server.")
     
     # Armazena endereço de IP do servidor
     ip = get_ip('servidor')

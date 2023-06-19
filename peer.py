@@ -24,7 +24,7 @@ def get_file_names(folder):
 def start_peer():
 
     # Exibe a mensagem
-    print("Inicializando peer.")
+    print("Inicializando Peer.")
 
     # Armazena endereço de IP do peer
     peer_ip = get_ip('peer')
