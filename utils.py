@@ -83,7 +83,9 @@ def get_port(class_type):
 def get_filepath():   
     while True:
         print("Digite o caminho do arquivo, ou 0 para sair.")
-        path = input("Caminho do arquivo: ")
+        path = input("Caminho do arquivo (default: '.'): ")
+        if not path:
+            path = "."
         if os.path.exists(path):
             print(f"O caminho '{path}' existe.")
             return path
@@ -97,6 +99,8 @@ def get_filename(file_path):
     while True:   
         print("Digite o nome do arquivo, ou 0 para sair.")
         filename = input("Nome do arquivo: ")
+        if not filename:
+            filename = "README.md"
         if os.path.isfile(file_path):
             return filename
         elif filename == "0":
