@@ -103,6 +103,22 @@ def get_filename():
             filename = 'README.md'
         return filename
 
+
+# Método para obter nomes dos arquivos em uma pasta
+def get_file_names(folder):
+    # Verifica se o caminho é uma pasta válida
+    if not os.path.isdir(folder):
+        raise ValueError("O caminho fornecido não é uma pasta válida.")
+
+    # Obtém os nomes dos arquivos na pasta
+    file_names = []
+    for file_name in os.listdir(folder):
+        file_path = os.path.join(folder, file_name)
+        if os.path.isfile(file_path):
+            file_names.append(file_name)
+    
+    return file_names
+
 # Método para capturar entradas do peer
 def interactive_menu(peer):
     # Peer Info
@@ -133,7 +149,6 @@ def interactive_menu(peer):
 
         option = input("Opção: ")
 
-        peer_folder = '.'
         # JOIN
         if option == "1":
             peer_folder = get_filepath(my_folder)
