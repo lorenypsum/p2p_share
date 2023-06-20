@@ -115,44 +115,50 @@ class Peer:
         # Conecta-se ao peer utilizando sockets TCP
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
         sock.connect((peer_ip, peer_port))
+        with sock:
 
-        # TODO Envia a requisição de DOWNLOAD ao peer? 
-        # TODO isso devolve uma resposta?
-        # ou seja, é aqui que eu recebo a resposta se a conexão foi aceita ou rejeitada
-        
-        # Envia a requisição de DOWNLOAD ao peer
-        sock.send(f"{filename}".encode("utf-8"))
+            # TODO Envia a requisição de DOWNLOAD ao peer? 
+            # TODO isso devolve uma resposta?
+            # ou seja, é aqui que eu recebo a resposta se a conexão foi aceita ou rejeitada
+            
+            # Envia a requisição de DOWNLOAD ao peer
+            sock.sendall(f"{filename}".encode("utf-8"))
+            # Armazena caminho do arquivo
+            file_path = os.path.join(self.folder, filename)
 
-        # Armazena caminho do arquivo
-        file_path = os.path.join(self.folder, filename)
-
-        # Recebe a resposta do peer
-        response = sock.recv(1024).decode("utf-8")
-        response = response.lower()
-
-        if response == "accept":
-            # Tamanho do arquivo recebido do peer
-            file_size = int(sock.recv(1024).decode("utf-8"))
-
-            # Envia a resposta de aceitação para o peer
-            sock.send("ACCEPT".encode("utf-8"))
-
-            # Recebe o arquivo do peer
             with open(file_path, "wb") as file:
-                bytes_received = 0
-                while bytes_received < file_size:
+                while True:
                     data = sock.recv(4096)
+                    if not data:
+                        break
                     file.write(data)
-                    bytes_received += len(data)
-
-            # Exibe mensagem no console do cliente (peer)
-            print(f"Arquivo {filename} baixado com sucesso na pasta {self.folder}.")
             self.update(filename)
-        else:
-            # Exibe mensagem no console do cliente (peer)
-            print(f"O peer {peer_ip}:{peer_port} rejeitou a transferência do arquivo {filename}.")
 
-        sock.close()
+            # Recebe a resposta do peer
+            # response = sock.recv(1024).decode("utf-8")
+            # response = response.lower()
+
+            # if response == "accept":
+            #     # Tamanho do arquivo recebido do peer
+            #     file_size = int(sock.recv(1024).decode("utf-8"))
+
+            #     # Envia a resposta de aceitação para o peer
+            #     sock.send("ACCEPT".encode("utf-8"))
+
+            #     # Recebe o arquivo do peer
+            #     with open(file_path, "wb") as file:
+            #         bytes_received = 0
+            #         while bytes_received < file_size:
+            #             data = sock.recv(4096)
+            #             file.write(data)
+            #             bytes_received += len(data)
+
+            #     # Exibe mensagem no console do cliente (peer)
+            #     print(f"Arquivo {filename} baixado com sucesso na pasta {self.folder}.")
+            #     self.update(filename)
+            # else:
+            #     # Exibe mensagem no console do cliente (peer)
+            #     print(f"O peer {peer_ip}:{peer_port} rejeitou a transferência do arquivo {filename}.")
     
     # Método de conexão para peer receber requisição de download
     def listen_for_download_requests(self):
@@ -162,54 +168,48 @@ class Peer:
             threading.Thread(target=self.handle_download_request, args=[conn], daemon=True).start()
             
     # Método de conexão para peer enviar dados de arquivo requisitado
-    def handle_download_request(self, conn):
-        # Tamanho do pacote em bytes
-        CHUNK_SIZE = 4096  
+    def handle_download_request(self, conn: socket.socket):
+        with conn:
+            # Armazenar conexão entre peers?
+            filename = conn.recv(1024).decode("utf-8")
 
-        # Armazenar conexão entre peers?
-        filename = conn.recv(1024).decode("utf-8")
+            # Armazenar caminho do arquivo
+            file_path = os.path.join(self.folder, filename)
 
-        # Armazenar caminho do arquivo
-        file_path = os.path.join(self.folder, filename)
+            # TODO Verifica se existe o arquivo no caminho - eu recebo essa resposta no método acima?
+            # if os.path.exists(file_path):
+            #     # Enviar resposta de aceitação para o cliente
+            #     conn.send("ACCEPT".encode("utf-8"))
+            # else:
+            #     # File not found, send error message to the client
+            #     conn.send("REJECT".encode("utf-8"))
+            #     conn.close()
+            #     return
 
-        # TODO Verifica se existe o arquivo no caminho - eu recebo essa resposta no método acima?
-        if os.path.exists(file_path):
-            # Enviar resposta de aceitação para o cliente
-            conn.send("ACCEPT".encode("utf-8"))
-        else:
-            # File not found, send error message to the client
-            conn.send("REJECT".encode("utf-8"))
-            conn.close()
-            return
+            # # Armazenar tamanho do arquivo
+            # file_size = os.path.getsize(file_path)
 
-        # Armazenar tamanho do arquivo
-        file_size = os.path.getsize(file_path)
+            # # TODO Enviar o tamanho do arquivo para o cliente?
+            # conn.send(str(file_size).encode("utf-8"))
 
-        # TODO Enviar o tamanho do arquivo para o cliente?
-        conn.send(str(file_size).encode("utf-8"))
+            # # TODO Receber resposta do cliente (accept/reject)?
+            # response = conn.recv(1024).decode("utf-8")
+            # response = response.lower()
 
-        # TODO Receber resposta do cliente (accept/reject)?
-        response = conn.recv(1024).decode("utf-8")
-        response = response.lower()
-
-        # Verifica se cliente rejeitou enviar o arquivo
-        if response != "accept":
-            print("Peer rejeitou a transferência do arquivo, fechar a conexão.")
-            conn.close()
-            return
-
-        # Abre o arquivo em modo binário para a leitura
-        with open(file_path, 'rb') as file:
-            # Envia o arquivo em pacotes
-            while True:
-                data = file.read(CHUNK_SIZE)
-                if not data:
-                    break
-                #conn.write(data)
-                conn.sendall(data)
-
-        # Fecha a conezão depois que o arquivo é enviado
-        conn.close()
+            # # Verifica se cliente rejeitou enviar o arquivo
+            # if response != "accept":
+            #     print("Peer rejeitou a transferência do arquivo, fechar a conexão.")
+            #     return
+            # Abre o arquivo em modo binário para a leitura
+            with open(file_path, 'rb') as file:
+                conn.sendfile(file)
+                # # Envia o arquivo em pacotes
+                # while True:
+                #     data = file.read(1024)
+                #     if not data:
+                #         break
+                #     #conn.write(data)
+                #     conn.sendall(data)
 
 # Função principal do cliente (peer)
 def main():

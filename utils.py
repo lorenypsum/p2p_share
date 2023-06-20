@@ -95,18 +95,13 @@ def get_filepath(file_path):
             print("Caminho inválido. Por favor, tente novamente.")
 
 # Método para capturar nome de arquivo
-def get_filename(file_path):
+def get_filename():
     while True:   
         print("Digite o nome do arquivo, ou 0 para sair.")
         filename = input("Nome do arquivo (default: 'README.md'): ")
         if not filename:
             filename = 'README.md'
-        if os.path.isfile(file_path):
-            return filename
-        elif filename == "0":
-            break
-        else:
-            print("Arquivo não encontrado. Por favor, tente novamente.")
+        return filename
 
 # Método para capturar entradas do peer
 def interactive_menu(peer):
@@ -142,17 +137,20 @@ def interactive_menu(peer):
         # JOIN
         if option == "1":
             peer_folder = get_filepath(my_folder)
-            peer.join(my_folder)
+            if peer_folder:
+                peer.join(my_folder)
         # SEARCH
         elif option == "2":
-            filename = get_filename(peer_folder)
-            peer.search(filename)
+            filename = get_filename()
+            if filename:
+                peer.search(filename)
         # DOWNLOAD
         elif option == "3":
             ip = get_ip('peer')
             port = get_port('peer')
-            filename = get_filename(peer_folder)
-            peer.download(ip, port, filename)
+            filename = get_filename()
+            if filename:
+                peer.download(ip, port, filename)
         # SAIR
         elif option == "0":
             print("Saindo do programa...")
