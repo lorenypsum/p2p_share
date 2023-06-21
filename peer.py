@@ -1,3 +1,4 @@
+import random
 import socket
 import threading
 import Pyro4
@@ -111,7 +112,7 @@ class Peer:
             file_path = os.path.join(self.folder, filename)
 
             # Verifica se existe o arquivo no caminho - peer recebe essa resposta no método download
-            if not os.path.exists(file_path):
+            if not os.path.exists(file_path) or random.random() > 0.5:
                 sock.sendall("REJECT".encode("utf-8"))
                 return
             sock.sendall("ACCEPT".encode("utf-8"))
