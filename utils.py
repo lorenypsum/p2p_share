@@ -2,6 +2,8 @@ import os
 import re
 
 # Método para extrair endereço IP válido
+
+
 def extract_ip(string):
     # Regex para extrair o IP
     pattern_1 = r"\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*"
@@ -22,6 +24,8 @@ def extract_ip(string):
         raise Exception(f"[ERRO] Formato de endereço IP inválido.")
 
 # Método para extrair endereço porta válido
+
+
 def extract_port(string):
     # Regex para extrair o Porta
     pattern_1 = r"\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)\s*"
@@ -40,19 +44,23 @@ def extract_port(string):
         return port_int
     else:
         raise Exception(f"[ERRO] Formato de endereço porta inválido.")
-    
+
 # Método para capturar endereço IP válido
-def get_ip(class_type):   
-        # Captura do IP
-        ip = input(f"Informe o IP do {class_type} (default: 127.0.0.1): ")
-        if not ip:
-            ip = "127.0.0.1"
-        ip = extract_ip(ip)
-        # Exibe endereço IP recebido por input
-        print(f"Endereço IP do {class_type} capturado: {ip}.")
-        return ip
-    
+
+
+def get_ip(class_type):
+    # Captura do IP
+    ip = input(f"Informe o IP do {class_type} (default: 127.0.0.1): ")
+    if not ip:
+        ip = "127.0.0.1"
+    ip = extract_ip(ip)
+    # Exibe endereço IP recebido por input
+    print(f"Endereço IP do {class_type} capturado: {ip}.")
+    return ip
+
 # Método para capturar endereço de porta válido
+
+
 def get_port(class_type):
 
     class_type = class_type.lower()
@@ -65,7 +73,7 @@ def get_port(class_type):
         # Exibe endereço porta recebido por input
         print(f"Endereço de porta do {class_type} capturado: {port}.")
         return port
-    
+
     elif (class_type == 'peer' or class_type == 'client' or class_type == 'cliente'):
         port = input(f"Informe a porta do {class_type} (default: 1100): ")
         if not port:
@@ -74,13 +82,15 @@ def get_port(class_type):
         # Exibe endereço porta recebido por input
         print(f"Endereço de porta do {class_type} capturado: {port}.")
         return port
-    
+
     else:
         # Exibe endereço porta recebido por input
         print(f"Class type: {class_type} não foi identificado.")
 
 # Método para capturar caminho de arquivo válido
-def get_filepath(file_path):   
+
+
+def get_filepath(file_path):
     while True:
         print("Digite o caminho do arquivo, ou 0 para sair.")
         path = input("Caminho do arquivo (default: peer folder): ")
@@ -95,8 +105,10 @@ def get_filepath(file_path):
             print("Caminho inválido. Por favor, tente novamente.")
 
 # Método para capturar nome de arquivo
+
+
 def get_filename():
-    while True:   
+    while True:
         print("Digite o nome do arquivo, ou 0 para sair.")
         filename = input("Nome do arquivo (default: 'README.md'): ")
         if not filename:
@@ -116,10 +128,12 @@ def get_file_names(folder):
         file_path = os.path.join(folder, file_name)
         if os.path.isfile(file_path):
             file_names.append(file_name)
-    
+
     return file_names
 
 # Método para capturar entradas do peer
+
+
 def interactive_menu(peer):
     # Peer Info
     my_ip = peer.ip
@@ -128,12 +142,13 @@ def interactive_menu(peer):
     my_folder = peer.folder
 
     # Peer Info
-    print( f'INFO ABOUT ME: ')
-    print(f"IP: {my_ip}, PORT: {my_port}, SERVER_URI: {my_server_uri},  FOLDER: {my_folder}")
+    print(f'INFO ABOUT ME: ')
+    print(
+        f"IP: {my_ip}, PORT: {my_port}, SERVER_URI: {my_server_uri},  FOLDER: {my_folder}")
     print("")
 
     # Menu
-    while True:    
+    while True:
         # Opções
         print("")
         print("############################")
@@ -170,6 +185,6 @@ def interactive_menu(peer):
         elif option == "0":
             print("Saindo do programa...")
             break
-        # ERRO        
+        # ERRO
         else:
             print("Opção inválida. Tente novamente.")
